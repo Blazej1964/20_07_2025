@@ -1,0 +1,8 @@
+streamlit
+python-dotenv
+openai
+Pillow
+qdrant-client
+plotly
+numpy
+audiorecorder
