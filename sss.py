@@ -15,8 +15,14 @@ from audiorecorder import audiorecorder  # type: ignore
 from io import BytesIO
 import numpy as np
 
-# Ładowanie danych z pliku .env
 env = dotenv_values(".env")
+### Secrets using Streamlit Cloud Mechanism
+# https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management
+if 'QDRANT_URL' in st.secrets:
+    env['QDRANT_URL'] = st.secrets['QDRANT_URL']
+if 'QDRANT_API_KEY' in st.secrets:
+    env['QDRANT_API_KEY'] = st.secrets['QDRANT_API_KEY']
+###
 
 # Zmienne
 EMBEDDING_MODEL = "text-embedding-3-large"
@@ -26,14 +32,22 @@ AUDIO_TRANSCRIBE_MODEL = "whisper-1"
 FAVORITES_COLLECTION_NAME = "favorites" 
 GALLERY_COLLECTION_NAME = "nazwa_twojej_kolekcji_w_galerii"
 
-env = dotenv_values(".env")
+#env = dotenv_values(".env")
 # Inicjalizacja klienta Qdrant
+#@st.cache_resource
+#def get_qdrant_client():
+ #   return QdrantClient(
+ #   url=env["QDRANT_URL"],
+ #   api_key=env["QDRANT_API_KEY"],
+#)
+
 @st.cache_resource
 def get_qdrant_client():
     return QdrantClient(
-    url=env["QDRANT_URL"],
+    url=env["QDRANT_URL"], 
     api_key=env["QDRANT_API_KEY"],
 )
+
 
 qdrant_client = get_qdrant_client()
 
