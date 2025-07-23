@@ -418,6 +418,32 @@ def save_nutrition_values(calories, protein, carbohydrates):
     except Exception as e:
         st.error(f"Wystąpił błąd podczas zapisywania wartości odżywczych: {e}")
 
+def translate_text_from_image(client, uploaded_file):
+    uploaded_file.seek(0)
+    try:
+        bytes_data = uploaded_file.getvalue()
+        base64_image = base64.b64encode(bytes_data).decode('utf-8')
+        file_type = uploaded_file.type.split('/')[-1]
+        image_url = f"data:image/{file_type};base64,{base64_image}"
+
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            temperature=0,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Proszę przetłumaczyć tekst widoczny na zdjęciu na język polski."},
+                        {"type": "image_url", "image_url": {"url": image_url}}
+                    ]
+                }
+            ]
+        )
+        return response.choices[0].message.content
+
+    except Exception as e:
+        return f"Wystąpił błąd przy tłumaczeniu: {str(e)}"
+
 # Główna część aplikacji
 st.sidebar.markdown("# Wybierz opcję:")
 selection = st.sidebar.selectbox("Wybierz opcję:", [
@@ -426,10 +452,14 @@ selection = st.sidebar.selectbox("Wybierz opcję:", [
     "Zdjęcie dania",  # Wczytaj danie
     "Ulubione",  # Ulubione
     "Znajdź danie",  # Wyszukaj notatkę
-    
+    "Tłumacz"
     #"Moje BMI",  # Oblicz BMI
     #"Wykresy"  # Nowa zakładka
 ])
+
+# Dodaj przycisk do zakładki "Tłumacz"
+#if st.sidebar.button("Tłumacz"):
+#    selection = "Tłumacz"
 
 # Resetowanie stanu sesji po zmianie zakładki
 if 'uploaded_files' not in st.session_state:
@@ -1115,3 +1145,38 @@ if selection == "Wyniki dzienne":
                 st.rerun()
     else:
         st.write("Brak zapisanych zdjęć dla wybranej daty.")
+
+
+
+# Zakładka "tłumacz"
+elif selection == "Tłumacz":
+    st.header("Wczytaj zdjęcia do tłumaczenia:")
+    uploaded_files = st.file_uploader("Wybierz zdjęcia (maks. 5)", type=["jpg", "jpeg", "png"], accept_multiple_files=True, key=f"uploader_{st.session_state['uploader_key']}")
+
+    if 'translated_notes' not in st.session_state:
+        st.session_state['translated_notes'] = {}
+
+    if uploaded_files:
+        for uploaded_file in uploaded_files:
+            # Wyświetlanie zdjęcia
+            image = Image.open(uploaded_file)
+            st.image(image, caption='Wczytane zdjęcie', use_container_width=True)
+
+            # Tłumaczenie tekstu z obrazów
+            if uploaded_file.name not in st.session_state['translated_notes']:
+                translated_text = translate_text_from_image(client, uploaded_file)
+                if translated_text and "Wystąpił błąd" not in translated_text:
+                    st.session_state['translated_notes'][uploaded_file.name] = translated_text 
+
+            # Wyświetlanie przetłumaczonego tekstu z automatycznym dopasowaniem wysokości
+            text_area_key = f"editable_translation_{uploaded_file.name}"
+            max_height = min(300, 100 + (len(st.session_state['translated_notes'].get(uploaded_file.name, "").splitlines()) + 1) * 20)
+            st.text_area(
+                f"Tłumaczenie dla {uploaded_file.name}:",
+                value=st.session_state['translated_notes'].get(uploaded_file.name, ""),
+                height=max(150, max_height),  # Dostosowanie wysokości na podstawie tekstu
+                key=text_area_key
+            )
+
+    else:
+        st.warning("Proszę wczytać przynajmniej jedno zdjęcie.")
