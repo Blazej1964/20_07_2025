@@ -424,8 +424,14 @@ def translate_text_from_image(client, uploaded_file):
     try:
         # Otwórz obraz z przesłanego pliku
         image = Image.open(uploaded_file)
+
         # Użyj OCR do odczytu tekstu z obrazu
-        extracted_text = pytesseract.image_to_string(image, lang='pol')  # użyj 'eng' dla angielskiego
+        extracted_text = pytesseract.image_to_string(image, lang='pol')
+        print("Wyodrębniony tekst:", extracted_text)  # Logowanie wyodrębnionego tekstu
+
+        # Sprawdź wyodrębniony tekst
+        if not extracted_text.strip():  # Sprawdzanie, czy tekst jest pusty
+            return "Nie udało się wyodrębnić tekstu z obrazu."
 
         # Użyj wyodrębnionego tekstu w zapytaniu do modelu
         response = client.chat.completions.create(
@@ -436,9 +442,14 @@ def translate_text_from_image(client, uploaded_file):
                     "role": "user",
                     "content": f"Proszę przetłumaczyć na język polski: {extracted_text}"
                 }
-                    ]
-                )
-        return response.choices[0].message.content
+            ]
+        )
+
+        # Sprawdzenie odpowiedzi
+        if response.choices:
+            return response.choices[0].message.content
+        else:
+            return "Brak odpowiedzi z modelu."
 
     except Exception as e:
         return f"Wystąpił błąd przy tłumaczeniu: {str(e)}"
@@ -1164,18 +1175,19 @@ elif selection == "Tłumacz":
             # Tłumaczenie tekstu z obrazów
             if uploaded_file.name not in st.session_state['translated_notes']:
                 translated_text = translate_text_from_image(client, uploaded_file)
+                st.write("Próba tłumaczenia:", translated_text)  # Logowanie wyniku tłumaczenia
+
                 if translated_text and "Wystąpił błąd" not in translated_text:
                     st.session_state['translated_notes'][uploaded_file.name] = translated_text 
 
-            # Wyświetlanie przetłumaczonego tekstu z automatycznym dopasowaniem wysokości
+            # Wyświetlanie przetłumaczonego tekstu
             text_area_key = f"editable_translation_{uploaded_file.name}"
             max_height = min(300, 100 + (len(st.session_state['translated_notes'].get(uploaded_file.name, "").splitlines()) + 1) * 20)
             st.text_area(
                 f"Tłumaczenie dla {uploaded_file.name}:",
                 value=st.session_state['translated_notes'].get(uploaded_file.name, ""),
-                height=max(150, max_height),  # Dostosowanie wysokości na podstawie tekstu
+                height=max(150, max_height),
                 key=text_area_key
             )
-
     else:
         st.warning("Proszę wczytać przynajmniej jedno zdjęcie.")
