@@ -1172,7 +1172,7 @@ elif selection == "Tłumacz":
             image = Image.open(uploaded_file)
             st.image(image, caption='Wczytane zdjęcie', use_container_width=True)
 
-            # Tłumaczenie tekstu z obrazów
+            # Tłumaczenie tekstu z obrazów 2
             if uploaded_file.name not in st.session_state['translated_notes']:
                 translated_text = translate_text_from_image(client, uploaded_file)
                 st.write("Próba tłumaczenia:", translated_text)  # Logowanie wyniku tłumaczenia
