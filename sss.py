@@ -420,36 +420,37 @@ def save_nutrition_values(calories, protein, carbohydrates):
         st.error(f"Wystąpił błąd podczas zapisywania wartości odżywczych: {e}")
 
 def translate_text_from_image(client, uploaded_file):
-    uploaded_file.seek(0)
+    """Funkcja tłumacząca tekst z obrazu przesłanego przez użytkownika.
+
+    Args:
+        client: Obiekt klienta do obsługi zapytań do modelu.
+        uploaded_file: Plik obrazu przesłany przez użytkownika, z którego ma być wyodrębniony tekst.
+
+    Returns:
+        str: Przetłumaczony tekst lub informacja o błędzie.
+    """
+    uploaded_file.seek(0)  # Upewnij się, że plik jest w odpowiedniej pozycji
     try:
-        # Otwórz obraz z przesłanego pliku
-        image = Image.open(uploaded_file)
+        bytes_data = uploaded_file.getvalue()  # Odczytaj dane pliku
+        base64_image = base64.b64encode(bytes_data).decode('utf-8')  # Sformatuj obraz w base64
+        file_type = uploaded_file.type.split('/')[-1]  # Rozdziel typ pliku
+        image_url = f"data:image/{file_type};base64,{base64_image}"  # Tworzenie URL obrazu w base64
 
-        # Użyj OCR do odczytu tekstu z obrazu
-        extracted_text = pytesseract.image_to_string(image, lang='pol')
-        print("Wyodrębniony tekst:", extracted_text)  # Logowanie wyodrębnionego tekstu
-
-        # Sprawdź wyodrębniony tekst
-        if not extracted_text.strip():  # Sprawdzanie, czy tekst jest pusty
-            return "Nie udało się wyodrębnić tekstu z obrazu."
-
-        # Użyj wyodrębnionego tekstu w zapytaniu do modelu
+        # Wywołanie do modelu z zadaniem tłumaczenia
         response = client.chat.completions.create(
             model="gpt-4o",
             temperature=0,
             messages=[
                 {
                     "role": "user",
-                    "content": f"Proszę przetłumaczyć na język polski: {extracted_text}"
+                    "content": [
+                        {"type": "text", "text": "Proszę przetłumaczyć tekst widoczny na zdjęciu na język polski."},
+                        {"type": "image_url", "image_url": {"url": image_url}}
+                    ]
                 }
             ]
         )
-
-        # Sprawdzenie odpowiedzi
-        if response.choices:
-            return response.choices[0].message.content
-        else:
-            return "Brak odpowiedzi z modelu."
+        return response.choices[0].message.content  # Zwróć przetłumaczony tekst
 
     except Exception as e:
         return f"Wystąpił błąd przy tłumaczeniu: {str(e)}"
@@ -1172,7 +1173,7 @@ elif selection == "Tłumacz":
             image = Image.open(uploaded_file)
             st.image(image, caption='Wczytane zdjęcie', use_container_width=True)
 
-            # Tłumaczenie tekstu z obrazów 2
+            # Tłumaczenie tekstu z obrazów
             if uploaded_file.name not in st.session_state['translated_notes']:
                 translated_text = translate_text_from_image(client, uploaded_file)
                 st.write("Próba tłumaczenia:", translated_text)  # Logowanie wyniku tłumaczenia
