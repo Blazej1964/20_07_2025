@@ -14,6 +14,7 @@ from hashlib import md5
 from audiorecorder import audiorecorder  # type: ignore
 from io import BytesIO
 import numpy as np
+import pytesseract
 
 env = dotenv_values(".env")
 ### Secrets using Streamlit Cloud Mechanism
@@ -421,11 +422,12 @@ def save_nutrition_values(calories, protein, carbohydrates):
 def translate_text_from_image(client, uploaded_file):
     uploaded_file.seek(0)
     try:
-        bytes_data = uploaded_file.getvalue()
-        base64_image = base64.b64encode(bytes_data).decode('utf-8')
-        file_type = uploaded_file.type.split('/')[-1]
-        image_url = f"data:image/{file_type};base64,{base64_image}"
+        # Otwórz obraz z przesłanego pliku
+        image = Image.open(uploaded_file)
+        # Użyj OCR do odczytu tekstu z obrazu
+        extracted_text = pytesseract.image_to_string(image, lang='pol')  # użyj 'eng' dla angielskiego
 
+        # Użyj wyodrębnionego tekstu w zapytaniu do modelu
         response = client.chat.completions.create(
             model="gpt-4o",
             temperature=0,
@@ -433,8 +435,7 @@ def translate_text_from_image(client, uploaded_file):
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": "Proszę przetłumaczyć tekst widoczny na zdjęciu na język polski."},
-                        {"type": "image_url", "image_url": {"url": image_url}}
+                        {"type": "text", "text": f"Proszę przetłumaczyć na język polski: {extracted_text}"}
                     ]
                 }
             ]
