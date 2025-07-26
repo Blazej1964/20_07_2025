@@ -1176,12 +1176,13 @@ elif selection == "Tłumacz":
             # Tłumaczenie tekstu z obrazów
             if uploaded_file.name not in st.session_state['translated_notes']:
                 translated_text = translate_text_from_image(client, uploaded_file)
-                st.write("Próba tłumaczenia:", translated_text)  # Logowanie wyniku tłumaczenia
+                # Logowanie wyniku tłumaczenia (możesz odkomentować, jeśli chcesz)
+                # st.write("Próba tłumaczenia:", translated_text)
 
                 if translated_text and "Wystąpił błąd" not in translated_text:
                     st.session_state['translated_notes'][uploaded_file.name] = translated_text 
 
-            # Wyświetlanie przetłumaczonego tekstu
+            # Wyświetlanie przetłumaczonego tekstu w text area
             text_area_key = f"editable_translation_{uploaded_file.name}"
             max_height = min(300, 100 + (len(st.session_state['translated_notes'].get(uploaded_file.name, "").splitlines()) + 1) * 20)
             st.text_area(
