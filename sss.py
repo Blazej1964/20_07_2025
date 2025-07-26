@@ -434,12 +434,10 @@ def translate_text_from_image(client, uploaded_file):
             messages=[
                 {
                     "role": "user",
-                    "content": [
-                        {"type": "text", "text": f"Proszę przetłumaczyć na język polski: {extracted_text}"}
-                    ]
+                    "content": f"Proszę przetłumaczyć na język polski: {extracted_text}"
                 }
-            ]
-        )
+                    ]
+                )
         return response.choices[0].message.content
 
     except Exception as e:
