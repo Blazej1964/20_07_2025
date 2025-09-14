@@ -42,12 +42,12 @@ env = dotenv_values(".env")
 #    api_key=env["QDRANT_API_KEY"],
 #)
 
-#@st.cache_resource
-#def get_qdrant_client():
-#    return QdrantClient(
-#    url=env["QDRANT_URL"], 
-#    api_key=env["QDRANT_API_KEY"],
-#)
+@st.cache_resource
+def get_qdrant_client():
+    return QdrantClient(
+    url=env["QDRANT_URL"], 
+    api_key=env["QDRANT_API_KEY"],
+)
 
 
 qdrant_client = get_qdrant_client()
