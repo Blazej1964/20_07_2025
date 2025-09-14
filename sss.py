@@ -1211,21 +1211,22 @@ if selection == "Podsumowanie dzienne":
 
         # Wyświetl notatki bez zdjęć
         for note in notes_without_images:
-            st.write(f"**Kalorie:** {note['calories']} kcal")
-            st.write(f"**Białko:** {note.get('protein', 0)} g")
-            st.write(f"**Węglowodany:** {note.get('carbohydrates', 0)} g")
+            # Składniki wyświetlane bezpośrednio
+            st.markdown(
+                f"<div style='padding: 10px; border-radius: 5px; background-color: transparent;'>"  
+                f"<textarea readonly style='width: 100%; height: 100px; border: none; background: transparent; resize: none;'>{note['text']}</textarea>"
+                f"</div>",
+                unsafe_allow_html=True
+            )
 
-            # Rozwijane okno dla składników
-            with st.expander("Składniki", expanded=False):
-                st.markdown(
-                    f"<div style='padding: 10px; border-radius: 5px; background-color: transparent;'>"  
-                    f"<textarea readonly style='width: 100%; height: 100px; border: none; background: transparent; resize: none;'>{note['text']}</textarea>"
-                    f"</div>",
-                    unsafe_allow_html=True
-                )
+            # Rozwijane okno dla kalorii, białka i węglowodanów
+            with st.expander("Kalorie, Białko i Węglowodany", expanded=False):
+                st.write(f"**Kalorie:** {note['calories']} kcal")
+                st.write(f"**Białko:** {note.get('protein', 0)} g")
+                st.write(f"**Węglowodany:** {note.get('carbohydrates', 0)} g")
 
             if st.button("Usuń zdjęcie", key=f"remove_{note['id']}"):
                 delete_note_from_db(note['id'])
                 st.rerun()
-    else:
-        st.write("Brak zapisanych zdjęć dla wybranej daty.")
+        else:
+            st.write("Brak zapisanych zdjęć dla wybranej daty.")
