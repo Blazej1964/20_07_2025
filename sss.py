@@ -123,9 +123,9 @@ def Kalorie(text):
             messages=[
                 {
                     "role": "user",
-                    "content": f"Proszę obliczyć kalorie, białko i węglowodany dla poniższych składników:\n{text}. "
-                               f"Podaj jedynie wartości końcowe w formacie: "
-                               f"Kalorie = xxx kcal\nBiałko = xxx g\nWęglowodany = xxx g."
+                    "content": f"Oblicz kalorie, białko i węglowodany dla:\n{text}. "
+                               "Podaj tylko wartości w formacie:\n"
+                               "Kalorie=xxx (kcal), Białko=xxx (g), Węglowodany=xxx (g)."
                 },
             ],
         )
@@ -136,10 +136,7 @@ def Kalorie(text):
         st.write(f"Odpowiedź modelu: {response_text}")  # Zobacz, co zwraca model
 
         # Przetworzenie odpowiedzi na słownik
-        if response_text:
-            return parse_nutrition_response(response_text)
-        else:
-            return {"Kalorie": 0, "Białko": 0, "Węglowodany": 0}
+        return parse_nutrition_response(response_text)
 
     except Exception as e:
         return {"Kalorie": 0, "Białko": 0, "Węglowodany": 0}
@@ -147,7 +144,7 @@ def Kalorie(text):
 def parse_nutrition_response(response):
     calories = re.search(r'Kalorie\s*=\s*(\d+)', response)
     protein = re.search(r'Białko\s*=\s*(\d+)', response)
-    carbohydrates = re.search(r'Węglowodany\s*=\s*(\d+) ', response)
+    carbohydrates = re.search(r'Węglowodany\s*=\s*(\d+)', response)
 
     return {
         "Kalorie": int(calories.group(1)) if calories else 0,
