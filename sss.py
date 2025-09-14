@@ -16,13 +16,13 @@ from io import BytesIO
 import numpy as np
 import pytesseract
 
-env = dotenv_values(".env")
+#env = dotenv_values(".env")
 ### Secrets using Streamlit Cloud Mechanism
 # https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management
-if 'QDRANT_URL' in st.secrets:
-    env['QDRANT_URL'] = st.secrets['QDRANT_URL']
-if 'QDRANT_API_KEY' in st.secrets:
-    env['QDRANT_API_KEY'] = st.secrets['QDRANT_API_KEY']
+#if 'QDRANT_URL' in st.secrets:
+#    env['QDRANT_URL'] = st.secrets['QDRANT_URL']
+#if 'QDRANT_API_KEY' in st.secrets:
+#    env['QDRANT_API_KEY'] = st.secrets['QDRANT_API_KEY']
 ###
 
 # Zmienne
@@ -33,14 +33,14 @@ AUDIO_TRANSCRIBE_MODEL = "whisper-1"
 FAVORITES_COLLECTION_NAME = "favorites" 
 GALLERY_COLLECTION_NAME = "nazwa_twojej_kolekcji_w_galerii"
 
-#env = dotenv_values(".env")
+env = dotenv_values(".env")
 # Inicjalizacja klienta Qdrant
-#@st.cache_resource
-#def get_qdrant_client():
- #   return QdrantClient(
- #   url=env["QDRANT_URL"],
- #   api_key=env["QDRANT_API_KEY"],
-#)
+@st.cache_resource
+def get_qdrant_client():
+    return QdrantClient(
+    url=env["QDRANT_URL"],
+    api_key=env["QDRANT_API_KEY"],
+)
 
 @st.cache_resource
 def get_qdrant_client():
@@ -458,19 +458,17 @@ def translate_text_from_image(client, uploaded_file):
 # Główna część aplikacji
 st.sidebar.markdown("# Wybierz opcję:")
 selection = st.sidebar.selectbox("Wybierz opcję:", [
-    "Wyniki dzienne",  # Galeria
-    "Wpisz danie",  # Dodaj danie
+    "Podsumowanie dzienne",  # Galeria
+    "Co dziś jadłem?",  # Dodaj danie
     "Zdjęcie dania",  # Wczytaj danie
-    "Ulubione",  # Ulubione
-    "Znajdź danie",  # Wyszukaj notatkę
+    "Zapisane",  # Ulubione
+    "Wyszukiwarka",  # Wyszukaj notatkę
     "Tłumacz"
     #"Moje BMI",  # Oblicz BMI
     #"Wykresy"  # Nowa zakładka
 ])
 
-# Dodaj przycisk do zakładki "Tłumacz"
-#if st.sidebar.button("Tłumacz"):
-#    selection = "Tłumacz"
+
 
 # Resetowanie stanu sesji po zmianie zakładki
 if 'uploaded_files' not in st.session_state:
@@ -483,6 +481,9 @@ if 'selected_option' not in st.session_state or st.session_state.selected_option
 
 if 'uploader_key' not in st.session_state:
     st.session_state['uploader_key'] = 0  # Inicjalizujemy klucz dla uploader'a
+###############################################################################################################################
+###############################################################################################################################
+###############################################################################################################################
 
 if selection == "Wykresy":
     st.header("Podsumowanie wyników dla wybranego dnia")
@@ -567,46 +568,51 @@ if selection == "Wykresy":
         legend=dict(x=0, y=1),
     )
     st.plotly_chart(fig_carbs, use_container_width=True)
+###############################################################################################################################
+###############################################################################################################################
+###############################################################################################################################
 
-# Kontynuacja poprzednich sekcji dla "Znajdź danie", "Wyniki dzienne", "Wpisz danie", "Moje BMI" i "Ulubione"
 
-# Wyszukaj danie
-elif selection == "Znajdź danie":
-    query = st.text_input("Wyszukaj danie", on_change=None, key="search_query")
+elif selection == "Wyszukiwarka":
+    query = st.text_input("**Wpisz czego szukasz**", on_change=None, key="search_query")  # pogrubienie
 
-    if query and (st.button("Szukaj") or st.session_state.get("search_query") != ''):
+    if query:
         notes = list_notes_from_db(query)
         if notes:
-            cols = st.columns(3)
-            for i, note in enumerate(notes):
-                with cols[i % 3]:
-                    if note["image"]:
-                        st.image(note["image"], caption="Miniaturka zdjęcia", use_container_width=True)
-                    else:
-                        st.write("Brak zdjęcia.")
+            # Uporządkowanie w jednej kolumnie, maksymalnie 10 pozycji
+            max_results = 10
+            notes = notes[:max_results]
+
+            for i, note in enumerate(notes, start=1):  # zaczynamy numerację od 1
+                # Ustawienia kontenera
+                st.markdown(
+                    f"<div style='border: 1px solid #ccc; border-radius: 5px; padding: 10px; margin: 10px 0;'>"
+                    f"<h5 style='margin: 0;'>#{i} - Data: {note['date_added']}</h5>", 
+                    unsafe_allow_html=True)
+
+                if note["image"]:
+                    # Wyświetlanie miniatury jako link
+                    st.markdown(f"<a href='{note['image']}' target='_blank'><img src='{note['image']}' width='100' /></a>", unsafe_allow_html=True)
+                else:
+                    st.write("Brak zdjęcia.")
+
+                # Dodanie szczegółów w tym samym kontenerze
+                st.markdown(
+                    f"<small>**Opis:** {note['text']}</small><br>"
+                    f"<small>**Kalorie:** {note['calories']} kcal</small><br>"
+                    f"<small>**Białko:** {note['protein']} g</small><br>"
+                    f"<small>**Węglowodany:** {note['carbohydrates']} g</small>",
+                    unsafe_allow_html=True
+                )
+
+                st.markdown("</div>", unsafe_allow_html=True)  # Zamykanie kontenera
 
         else:
             st.write("Brak pasujących notatek.")
-
-if 'caloric_needs' not in st.session_state:
-    st.session_state.caloric_needs = 0
-if 'protein_needs' not in st.session_state:
-    st.session_state.protein_needs = 0
-if 'carb_needs' not in st.session_state:
-    st.session_state.carb_needs = 0
-if 'total_calories' not in st.session_state:
-    st.session_state.total_calories = 0
-if 'total_protein' not in st.session_state:
-    st.session_state.total_protein = 0
-if 'total_carbohydrates' not in st.session_state:
-    st.session_state.total_carbohydrates = 0
-if 'notes' not in st.session_state:
-    st.session_state.notes = []
-
-# Wpisz danie
-# Wpisz danie
-# Wpisz danie
-if selection == "Wpisz danie":
+###############################################################################################################################
+###############################################################################################################################
+###############################################################################################################################
+if selection == "Co dziś jadłem?":
     st.header("Dodaj notatkę audio:")
 
     # Inicjalizuj zmienne w session_state
@@ -685,7 +691,9 @@ if selection == "Wpisz danie":
             except Exception as e:
                 st.error(f"Wystąpił błąd podczas zapisywania notatki: {e}")
 
-
+###############################################################################################################################
+###############################################################################################################################
+###############################################################################################################################
 
 # Moje BMI
 if selection == "Moje BMI":
@@ -795,10 +803,12 @@ if selection == "Moje BMI":
 
         except Exception as e:
             st.error(f"Wystąpił błąd podczas zapisywania danych: {e}")
-
+###############################################################################################################################
+###############################################################################################################################
+###############################################################################################################################
 # Zdjęcie dania
 if selection == "Zdjęcie dania":
-    st.header("Wczytaj zdjęcia do galerii:")
+    st.header("Wczytaj zdjęcia z galerii:")
     uploaded_files = st.file_uploader("Wybierz zdjęcia (maks. 5)", type=["jpg", "jpeg", "png"], accept_multiple_files=True, key=f"uploader_{st.session_state['uploader_key']}")
 
     if uploaded_files:
@@ -922,9 +932,11 @@ if selection == "Zdjęcie dania":
                     # Przeskocz do zakładki "Ulubione"
                     st.session_state['selected_option'] = "Ulubione"
                     st.rerun()  # Odświeżenie strony
-
+###############################################################################################################################
+###############################################################################################################################
+###############################################################################################################################
 # Ulubione
-if selection == "Ulubione":
+if selection == "Zapisane":
     st.header("Ulubione Dania")
     favorite_notes = list_notes_from_db(collection_name=FAVORITES_COLLECTION_NAME)
 
@@ -986,33 +998,96 @@ if selection == "Ulubione":
                     st.rerun()  # Odświeżenie strony
     else:
         st.write("Brak ulubionych potraw.")
+###############################################################################################################################
+###############################################################################################################################
+###############################################################################################################################
 
+
+###############################################################################################################################
+###############################################################################################################################
+###############################################################################################################################
+# Zakładka "tłumacz"
+elif selection == "Tłumacz":
+    st.header("Wczytaj zdjęcia do tłumaczenia:")
+    uploaded_files = st.file_uploader("Wybierz zdjęcia (maks. 5)", type=["jpg", "jpeg", "png"], accept_multiple_files=True, key=f"uploader_{st.session_state['uploader_key']}")
+
+    if 'translated_notes' not in st.session_state:
+        st.session_state['translated_notes'] = {}
+
+    if uploaded_files:
+        for uploaded_file in uploaded_files:
+            # Wyświetlanie zdjęcia
+            image = Image.open(uploaded_file)
+            st.image(image, caption='Wczytane zdjęcie', use_container_width=True)
+
+            # Tłumaczenie tekstu z obrazów
+            if uploaded_file.name not in st.session_state['translated_notes']:
+                translated_text = translate_text_from_image(client, uploaded_file)
+                # Logowanie wyniku tłumaczenia (możesz odkomentować, jeśli chcesz)
+                # st.write("Próba tłumaczenia:", translated_text)
+
+                if translated_text and "Wystąpił błąd" not in translated_text:
+                    st.session_state['translated_notes'][uploaded_file.name] = translated_text 
+
+            # Wyświetlanie przetłumaczonego tekstu w text area
+            text_area_key = f"editable_translation_{uploaded_file.name}"
+            max_height = min(300, 100 + (len(st.session_state['translated_notes'].get(uploaded_file.name, "").splitlines()) + 1) * 20)
+            st.text_area(
+                f"Tłumaczenie dla {uploaded_file.name}:",
+                value=st.session_state['translated_notes'].get(uploaded_file.name, ""),
+                height=max(150, max_height),
+                key=text_area_key
+            )
+    else:
+        st.warning("Proszę wczytać przynajmniej jedno zdjęcie.")
+###############################################################################################################################
+###############################################################################################################################
+###############################################################################################################################
+
+
+###############################################################################################################################
+###############################################################################################################################
 # Wyniki dzienne
-if selection == "Wyniki dzienne":
-    st.write("### Twoje dzienne zapotrzebowanie")
+if selection == "Podsumowanie dzienne":
+
+    # Inicjalizacja carb_needs, jeśli nie istnieje
+    if 'carb_needs' not in st.session_state:
+        st.session_state.carb_needs = 300  # Ustaw domyślną wartość, np. 300 g
+
+    # Inicjalizacja listy notatek, jeśli nie istnieje
+    if 'notes' not in st.session_state:
+        st.session_state.notes = []  # Inicjalizuj jako pustą listę
 
     # Wczytaj wartości odżywcze z bazy danych
     if 'nutrition_values' not in st.session_state:
         st.session_state.nutrition_values = get_nutrition_values()
 
-    # Pola do edycji wartości odżywczych
-    calories_input = st.number_input("Kalorie:", value=st.session_state.nutrition_values.get('calories', 2000), step=50)
-    protein_input = st.number_input("Białko:", value=st.session_state.nutrition_values.get('protein', 150), step=5)
-    carbohydrates_input = st.number_input("Węglowodany:", value=st.session_state.nutrition_values.get('carbohydrates', 300), step=5)
-
-    if st.button("Zapisz wartości"):
-        save_nutrition_values(calories_input, protein_input, carbohydrates_input)
-        st.session_state.nutrition_values = {
-            'calories': calories_input,
-            'protein': protein_input,
-            'carbohydrates': carbohydrates_input
-        }
-
     # Pobierz notatki/miniaturki dla wybranej daty
-    selected_date = st.date_input("Wybierz datę, aby wyświetlić zdjęcia:", datetime.now())
+    selected_date = st.date_input("", datetime.now())  # Pozostaw pusty string jako label, żeby nie powtarzać napisu
+
+    
+
     notes = list_notes_from_db()  # Pobierz wszystkie notatki
 
-    # Filtruj notatki według wybranej daty
+    # Rozwijane okno dla wartości odżywczych
+    with st.expander("Zmień wartości dziennego zapotrzebowania"):
+        # Pola do edycji wartości odżywczych
+        calories_input = st.number_input("Kalorie:", value=st.session_state.nutrition_values.get('calories', 2000), step=50)
+        protein_input = st.number_input("Białko:", value=st.session_state.nutrition_values.get('protein', 150), step=5)
+        carbohydrates_input = st.number_input("Węglowodany:", value=st.session_state.nutrition_values.get('carbohydrates', 300), step=5)
+
+        if st.button("Zapisz wartości"):
+            save_nutrition_values(calories_input, protein_input, carbohydrates_input)
+            st.session_state.nutrition_values = {
+                'calories': calories_input,
+                'protein': protein_input,
+                'carbohydrates': carbohydrates_input
+            }
+
+    # Delikatny odstęp i wyśrodkowany napis
+    st.markdown("<h3 style='text-align: center;'>Twoje dzienne zapotrzebowanie</h3>", unsafe_allow_html=True)
+    st.write("") 
+        # Filtruj notatki według wybranej daty
     filtered_notes = [note for note in notes if note.get("date_added") == selected_date.strftime("%Y-%m-%d")]
 
     # Inicjalizacja zmiennych do sumowania składników
@@ -1156,40 +1231,3 @@ if selection == "Wyniki dzienne":
                 st.rerun()
     else:
         st.write("Brak zapisanych zdjęć dla wybranej daty.")
-
-
-
-# Zakładka "tłumacz"
-elif selection == "Tłumacz":
-    st.header("Wczytaj zdjęcia do tłumaczenia:")
-    uploaded_files = st.file_uploader("Wybierz zdjęcia (maks. 5)", type=["jpg", "jpeg", "png"], accept_multiple_files=True, key=f"uploader_{st.session_state['uploader_key']}")
-
-    if 'translated_notes' not in st.session_state:
-        st.session_state['translated_notes'] = {}
-
-    if uploaded_files:
-        for uploaded_file in uploaded_files:
-            # Wyświetlanie zdjęcia
-            image = Image.open(uploaded_file)
-            st.image(image, caption='Wczytane zdjęcie', use_container_width=True)
-
-            # Tłumaczenie tekstu z obrazów
-            if uploaded_file.name not in st.session_state['translated_notes']:
-                translated_text = translate_text_from_image(client, uploaded_file)
-                # Logowanie wyniku tłumaczenia (możesz odkomentować, jeśli chcesz)
-                # st.write("Próba tłumaczenia:", translated_text)
-
-                if translated_text and "Wystąpił błąd" not in translated_text:
-                    st.session_state['translated_notes'][uploaded_file.name] = translated_text 
-
-            # Wyświetlanie przetłumaczonego tekstu w text area
-            text_area_key = f"editable_translation_{uploaded_file.name}"
-            max_height = min(300, 100 + (len(st.session_state['translated_notes'].get(uploaded_file.name, "").splitlines()) + 1) * 20)
-            st.text_area(
-                f"Tłumaczenie dla {uploaded_file.name}:",
-                value=st.session_state['translated_notes'].get(uploaded_file.name, ""),
-                height=max(150, max_height),
-                key=text_area_key
-            )
-    else:
-        st.warning("Proszę wczytać przynajmniej jedno zdjęcie.")
