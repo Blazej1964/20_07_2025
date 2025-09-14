@@ -1214,16 +1214,19 @@ if selection == "Podsumowanie dzienne":
             # Składniki wyświetlane bezpośrednio
             st.markdown(
                 f"<div style='padding: 10px; border-radius: 5px; background-color: transparent;'>"  
-                f"<textarea readonly style='width: 100%; height: 100px; border: none; background: transparent; resize: none;'>{note['text']}</textarea>"
+                f"<textarea readonly style='width: 100%; border: none; background: transparent; resize: none;'>{note['text']}</textarea>"
                 f"</div>",
                 unsafe_allow_html=True
             )
 
             # Rozwijane okno dla kalorii, białka i węglowodanów
-            with st.expander("Kalorie, Białko i Węglowodany", expanded=False):
+            with st.expander("Składniki - rozwiń listę", expanded=False):
                 st.write(f"**Kalorie:** {note['calories']} kcal")
                 st.write(f"**Białko:** {note.get('protein', 0)} g")
                 st.write(f"**Węglowodany:** {note.get('carbohydrates', 0)} g")
+
+            # Dodanie grubą linią oddzielającą kolejne wpisy
+            st.markdown("---")  # Gruba linia oddzielająca
 
             if st.button("Usuń zdjęcie", key=f"remove_{note['id']}"):
                 delete_note_from_db(note['id'])

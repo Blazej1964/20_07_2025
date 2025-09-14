@@ -123,9 +123,9 @@ def Kalorie(text):
             messages=[
                 {
                     "role": "user",
-                    "content": f"Proszę obliczyć kalorie, białko i węglowodany dla poniższych składników:\n{text}. "
-                               f"Podaj jedynie wartości końcowe w formacie: "
-                               f"Kalorie = xxx kcal\nBiałko = xxx g\nWęglowodany = xxx g."
+                    "content": f"Proszę obliczyć kalorie, białko i węglowodany dla następujących składników:\n{text}. "
+                               "Odpowiedz jedynie wartościami w formacie:\n"
+                               "Kalorie = xxx, Białko = xxx, Węglowodany = xxx."
                 },
             ],
         )
@@ -133,13 +133,10 @@ def Kalorie(text):
         response_text = res.choices[0].message.content.strip()
 
         # Debugowanie: Wyświetlenie odpowiedzi modelu
-        st.write(f"Odpowiedź modelu: {response_text}")  # Zobacz, co zwraca model
+        st.write(f"Odpowiedź modelu: {response_text}")
 
         # Przetworzenie odpowiedzi na słownik
-        if response_text:
-            return parse_nutrition_response(response_text)
-        else:
-            return {"Kalorie": 0, "Białko": 0, "Węglowodany": 0}
+        return parse_nutrition_response(response_text)
 
     except Exception as e:
         return {"Kalorie": 0, "Białko": 0, "Węglowodany": 0}
@@ -147,7 +144,7 @@ def Kalorie(text):
 def parse_nutrition_response(response):
     calories = re.search(r'Kalorie\s*=\s*(\d+)', response)
     protein = re.search(r'Białko\s*=\s*(\d+)', response)
-    carbohydrates = re.search(r'Węglowodany\s*=\s*(\d+) ', response)
+    carbohydrates = re.search(r'Węglowodany\s*=\s*(\d+)', response)
 
     return {
         "Kalorie": int(calories.group(1)) if calories else 0,
@@ -203,30 +200,30 @@ def add_note_to_db(note_text, nutrition_info, uploaded_file, date_added, client,
     except Exception as e:
         st.error(f"Wystąpił błąd podczas dodawania do galerii: {e}")
 
-def list_notes_from_db(query=None, collection_name=QDRANT_COLLECTION_NAME):
+def list_notes_from_db(query=None, collection_name=QDRANT_COLLECTION_NAME, limit=100):
     if not qdrant_client.collection_exists(collection_name):
         return []
 
     if not query:
-        # Zmieniamy to na scrollowanie w zależności od podanej kolekcji
-        notes = qdrant_client.scroll(collection_name=collection_name, limit=10)[0]
+        # Wczytujemy więcej niż 10 ostatnich wpisów
+        notes = qdrant_client.scroll(collection_name=collection_name, limit=limit)[0]
     else:
         query_vector = generate_embeddings(client, query)
         notes = qdrant_client.search(
             collection_name=collection_name,
             query_vector=query_vector,
-            limit=10,
+            limit=limit,
         )
 
     return [
         {
             "id": note.id,
-            "text": note.payload.get("text", ""),  # Użyj "" jako wartość domyślną, jeśli brak
-            "image": note.payload.get("image"),     # Użyj get(), aby uniknąć błędów
-            "calories": note.payload.get("calories", 0),  # Użyj 0 jako wartość domyślną
-            "protein": note.payload.get("protein", 0),    # Użyj 0 jako wartość domyślną
-            "carbohydrates": note.payload.get("carbohydrates", 0),  # Użyj 0 jako wartość domyślną
-            "date_added": note.payload.get("date_added", "")  # Użyj "" jako wartość domyślną
+            "text": note.payload.get("text", ""),  
+            "image": note.payload.get("image"),     
+            "calories": note.payload.get("calories", 0),  
+            "protein": note.payload.get("protein", 0),    
+            "carbohydrates": note.payload.get("carbohydrates", 0),  
+            "date_added": note.payload.get("date_added", "")  
         } for note in notes
     ]
 
@@ -1068,6 +1065,7 @@ if selection == "Podsumowanie dzienne":
     
 
     notes = list_notes_from_db()  # Pobierz wszystkie notatki
+    
 
     # Rozwijane okno dla wartości odżywczych
     with st.expander("Zmień wartości dziennego zapotrzebowania"):
