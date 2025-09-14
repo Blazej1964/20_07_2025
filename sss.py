@@ -1233,5 +1233,5 @@ if selection == "Podsumowanie dzienne":
             # Dodanie grubą linią oddzielającą kolejne wpisy
             st.markdown("---")  # Gruba linia oddzielająca
 
-        else:
-            st.write("Brak zapisanych zdjęć dla wybranej daty.")
+    else:
+        st.write("Brak zapisanych zdjęć dla wybranej daty.")
