@@ -212,7 +212,7 @@ def list_notes_from_db(query=None, collection_name=QDRANT_COLLECTION_NAME):
         notes = qdrant_client.search(
             collection_name=collection_name,
             query_vector=query_vector,
-            limit=10,
+            limit=1000,
         )
 
     return [
