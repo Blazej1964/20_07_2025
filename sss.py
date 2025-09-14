@@ -123,9 +123,9 @@ def Kalorie(text):
             messages=[
                 {
                     "role": "user",
-                    "content": f"Oblicz kalorie, białko i węglowodany dla:\n{text}. "
-                               "Podaj tylko wartości w formacie:\n"
-                               "Kalorie=xxx (kcal), Białko=xxx (g), Węglowodany=xxx (g)."
+                    "content": f"Proszę obliczyć kalorie, białko i węglowodany dla następujących składników:\n{text}. "
+                               "Odpowiedz jedynie wartościami w formacie:\n"
+                               "Kalorie = xxx, Białko = xxx, Węglowodany = xxx."
                 },
             ],
         )
@@ -133,7 +133,7 @@ def Kalorie(text):
         response_text = res.choices[0].message.content.strip()
 
         # Debugowanie: Wyświetlenie odpowiedzi modelu
-        st.write(f"Odpowiedź modelu: {response_text}")  # Zobacz, co zwraca model
+        st.write(f"Odpowiedź modelu: {response_text}")
 
         # Przetworzenie odpowiedzi na słownik
         return parse_nutrition_response(response_text)
