@@ -1065,6 +1065,7 @@ if selection == "Podsumowanie dzienne":
     
 
     notes = list_notes_from_db()  # Pobierz wszystkie notatki
+    st.write(notes)
 
     # Rozwijane okno dla wartości odżywczych
     with st.expander("Zmień wartości dziennego zapotrzebowania"):
