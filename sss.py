@@ -1225,11 +1225,13 @@ if selection == "Podsumowanie dzienne":
                 st.write(f"**Białko:** {note.get('protein', 0)} g")
                 st.write(f"**Węglowodany:** {note.get('carbohydrates', 0)} g")
 
+            # Przycisk "Usuń danie" poniżej rozwijanej listy
+            if st.button("Usuń danie", key=f"remove_{note['id']}"):
+                delete_note_from_db(note['id'])
+                st.rerun()
+
             # Dodanie grubą linią oddzielającą kolejne wpisy
             st.markdown("---")  # Gruba linia oddzielająca
 
-            if st.button("Usuń zdjęcie", key=f"remove_{note['id']}"):
-                delete_note_from_db(note['id'])
-                st.rerun()
         else:
             st.write("Brak zapisanych zdjęć dla wybranej daty.")
