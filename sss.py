@@ -200,30 +200,30 @@ def add_note_to_db(note_text, nutrition_info, uploaded_file, date_added, client,
     except Exception as e:
         st.error(f"Wystąpił błąd podczas dodawania do galerii: {e}")
 
-def list_notes_from_db(query=None, collection_name=QDRANT_COLLECTION_NAME):
+def list_notes_from_db(query=None, collection_name=QDRANT_COLLECTION_NAME, limit=100):
     if not qdrant_client.collection_exists(collection_name):
         return []
 
     if not query:
-        # Zmieniamy to na scrollowanie w zależności od podanej kolekcji
-        notes = qdrant_client.scroll(collection_name=collection_name, limit=10)[0]
+        # Wczytujemy więcej niż 10 ostatnich wpisów
+        notes = qdrant_client.scroll(collection_name=collection_name, limit=limit)[0]
     else:
         query_vector = generate_embeddings(client, query)
         notes = qdrant_client.search(
             collection_name=collection_name,
             query_vector=query_vector,
-            limit=1000,
+            limit=limit,
         )
 
     return [
         {
             "id": note.id,
-            "text": note.payload.get("text", ""),  # Użyj "" jako wartość domyślną, jeśli brak
-            "image": note.payload.get("image"),     # Użyj get(), aby uniknąć błędów
-            "calories": note.payload.get("calories", 0),  # Użyj 0 jako wartość domyślną
-            "protein": note.payload.get("protein", 0),    # Użyj 0 jako wartość domyślną
-            "carbohydrates": note.payload.get("carbohydrates", 0),  # Użyj 0 jako wartość domyślną
-            "date_added": note.payload.get("date_added", "")  # Użyj "" jako wartość domyślną
+            "text": note.payload.get("text", ""),  
+            "image": note.payload.get("image"),     
+            "calories": note.payload.get("calories", 0),  
+            "protein": note.payload.get("protein", 0),    
+            "carbohydrates": note.payload.get("carbohydrates", 0),  
+            "date_added": note.payload.get("date_added", "")  
         } for note in notes
     ]
 
