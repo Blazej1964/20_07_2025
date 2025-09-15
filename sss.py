@@ -33,11 +33,11 @@ AUDIO_TRANSCRIBE_MODEL = "whisper-1"
 FAVORITES_COLLECTION_NAME = "favorites" 
 GALLERY_COLLECTION_NAME = "nazwa_twojej_kolekcji_w_galerii"
 
-env = dotenv_values(".env")
+#env = dotenv_values(".env")
 # Inicjalizacja klienta Qdrant
 #@st.cache_resource
 #def get_qdrant_client():
-#    return QdrantClient(
+#   return QdrantClient(
 #    url=env["QDRANT_URL"],
 #    api_key=env["QDRANT_API_KEY"],
 #)
